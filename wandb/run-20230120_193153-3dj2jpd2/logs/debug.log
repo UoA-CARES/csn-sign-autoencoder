@@ -1,0 +1,39 @@
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_setup.py:_flush():68] Configure stats pid to 93471
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_setup.py:_flush():68] Loading settings from /home/sadat/.config/wandb/settings
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_setup.py:_flush():68] Loading settings from /home/sadat/Desktop/csn-sign-autoencoder/wandb/settings
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_setup.py:_flush():68] Loading settings from environment variables: {'_require_service': 'True'}
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_setup.py:_flush():68] Inferring run settings from compute environment: {'program': '<python with no main file>'}
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_init.py:_log_setup():476] Logging user logs to /home/sadat/Desktop/csn-sign-autoencoder/wandb/run-20230120_193153-3dj2jpd2/logs/debug.log
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_init.py:_log_setup():477] Logging internal logs to /home/sadat/Desktop/csn-sign-autoencoder/wandb/run-20230120_193153-3dj2jpd2/logs/debug-internal.log
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_init.py:init():516] calling init triggers
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_init.py:init():519] wandb.init called with sweep_config: {}
+config: {}
+2023-01-20 19:31:53,975 INFO    MainThread:93471 [wandb_init.py:init():535] re-initializing run, found existing run on stack: 2ww4ov8f
+2023-01-20 19:31:53,976 INFO    MainThread:93471 [wandb_run.py:_finish():1746] finishing run cares/autoencoder-experiments/2ww4ov8f
+2023-01-20 19:31:53,976 INFO    MainThread:93471 [jupyter.py:save_history():448] not saving jupyter history
+2023-01-20 19:31:53,976 INFO    MainThread:93471 [jupyter.py:save_ipynb():378] not saving jupyter notebook
+2023-01-20 19:31:53,976 INFO    MainThread:93471 [wandb_init.py:_jupyter_teardown():408] cleaning up jupyter logic
+2023-01-20 19:31:53,976 INFO    MainThread:93471 [wandb_run.py:_atexit_cleanup():1949] got exitcode: 0
+2023-01-20 19:31:53,976 INFO    MainThread:93471 [wandb_run.py:_restore():1932] restore
+2023-01-20 19:31:53,976 INFO    MainThread:93471 [wandb_run.py:_restore():1938] restore done
+2023-01-20 19:32:00,558 INFO    MainThread:93471 [wandb_run.py:_footer_history_summary_info():3377] rendering history
+2023-01-20 19:32:00,579 INFO    MainThread:93471 [wandb_run.py:_footer_history_summary_info():3409] rendering summary
+2023-01-20 19:32:00,582 INFO    MainThread:93471 [wandb_run.py:_footer_sync_info():3333] logging synced files
+2023-01-20 19:32:00,585 INFO    MainThread:93471 [wandb_init.py:init():569] starting backend
+2023-01-20 19:32:00,585 INFO    MainThread:93471 [wandb_init.py:init():573] setting up manager
+2023-01-20 19:32:00,589 INFO    MainThread:93471 [backend.py:_multiprocessing_setup():102] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2023-01-20 19:32:00,592 INFO    MainThread:93471 [wandb_init.py:init():580] backend started and connected
+2023-01-20 19:32:00,601 INFO    MainThread:93471 [wandb_run.py:_label_probe_notebook():1113] probe notebook
+2023-01-20 19:32:00,601 INFO    MainThread:93471 [wandb_run.py:_label_probe_notebook():1123] Unable to probe notebook: 'NoneType' object has no attribute 'get'
+2023-01-20 19:32:00,601 INFO    MainThread:93471 [wandb_init.py:init():658] updated telemetry
+2023-01-20 19:32:00,702 INFO    MainThread:93471 [wandb_init.py:init():693] communicating run to backend with 60 second timeout
+2023-01-20 19:32:02,188 INFO    MainThread:93471 [wandb_run.py:_on_init():2000] communicating current version
+2023-01-20 19:32:02,417 INFO    MainThread:93471 [wandb_run.py:_on_init():2004] got version response upgrade_message: "wandb version 0.13.9 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2023-01-20 19:32:02,417 INFO    MainThread:93471 [wandb_init.py:init():728] starting run threads in backend
+2023-01-20 19:32:04,239 INFO    MainThread:93471 [wandb_run.py:_console_start():1980] atexit reg
+2023-01-20 19:32:04,240 INFO    MainThread:93471 [wandb_run.py:_redirect():1838] redirect: SettingsConsole.WRAP_RAW
+2023-01-20 19:32:04,240 INFO    MainThread:93471 [wandb_run.py:_redirect():1903] Wrapping output streams.
+2023-01-20 19:32:04,240 INFO    MainThread:93471 [wandb_run.py:_redirect():1925] Redirects installed.
+2023-01-20 19:32:04,240 INFO    MainThread:93471 [wandb_init.py:init():765] run started, returning control to user process
+2023-01-20 19:32:09,863 INFO    MainThread:93471 [wandb_watch.py:watch():51] Watching
