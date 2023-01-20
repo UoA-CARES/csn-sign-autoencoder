@@ -1,0 +1,19 @@
+Test Loss: 5.720 | Accuracy: 11.765
+Epoch: 1 	Training Loss: 90.273099
+Epoch: 2 	Training Loss: 79.775211
+Epoch: 3 	Training Loss: 73.044076
+Epoch: 4 	Training Loss: 73.119954
+Epoch: 5 	Training Loss: 73.598534
+Test Loss: 4.908 | Accuracy: 11.765
+Epoch: 6 	Training Loss: 72.249646
+Epoch: 7 	Training Loss: 72.619099
+Epoch: 8 	Training Loss: 72.630196
+Epoch: 9 	Training Loss: 72.619281
+Epoch: 10 	Training Loss: 72.269120
+Test Loss: 4.850 | Accuracy: 11.765
+Epoch: 11 	Training Loss: 71.742616
+Epoch: 12 	Training Loss: 71.741005
+Epoch: 13 	Training Loss: 71.841788
+Epoch: 14 	Training Loss: 71.639771
+Epoch: 15 	Training Loss: 70.924148
+Test Loss: 4.786 | Accuracy: 11.765
