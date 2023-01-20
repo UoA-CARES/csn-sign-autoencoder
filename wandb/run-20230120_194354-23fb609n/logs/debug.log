@@ -47,3 +47,28 @@ config: {}
 2023-01-20 19:44:01,072 INFO    MainThread:107404 [wandb_init.py:_resume_backend():398] resuming backend
 2023-01-20 20:03:48,316 INFO    MainThread:107404 [wandb_init.py:_pause_backend():389] pausing backend
 2023-01-20 20:03:48,316 INFO    MainThread:107404 [jupyter.py:save_ipynb():378] not saving jupyter notebook
+2023-01-20 20:21:14,083 INFO    MainThread:107404 [wandb_init.py:_resume_backend():398] resuming backend
+2023-01-20 20:21:14,090 INFO    MainThread:107404 [wandb_init.py:_pause_backend():389] pausing backend
+2023-01-20 20:21:14,090 INFO    MainThread:107404 [jupyter.py:save_ipynb():378] not saving jupyter notebook
+2023-01-20 20:21:16,816 INFO    MainThread:107404 [wandb_init.py:_resume_backend():398] resuming backend
+2023-01-20 20:21:16,830 INFO    MainThread:107404 [wandb_setup.py:_flush():68] Configure stats pid to 107404
+2023-01-20 20:21:16,830 INFO    MainThread:107404 [wandb_setup.py:_flush():68] Loading settings from /home/sadat/.config/wandb/settings
+2023-01-20 20:21:16,830 INFO    MainThread:107404 [wandb_setup.py:_flush():68] Loading settings from /home/sadat/Desktop/csn-sign-autoencoder/wandb/settings
+2023-01-20 20:21:16,831 INFO    MainThread:107404 [wandb_setup.py:_flush():68] Loading settings from environment variables: {'_require_service': 'True'}
+2023-01-20 20:21:16,831 INFO    MainThread:107404 [wandb_setup.py:_flush():68] Inferring run settings from compute environment: {'program': '<python with no main file>'}
+2023-01-20 20:21:16,831 INFO    MainThread:107404 [wandb_init.py:_log_setup():476] Logging user logs to /home/sadat/Desktop/csn-sign-autoencoder/wandb/run-20230120_202116-31aq5tse/logs/debug.log
+2023-01-20 20:21:16,831 INFO    MainThread:107404 [wandb_init.py:_log_setup():477] Logging internal logs to /home/sadat/Desktop/csn-sign-autoencoder/wandb/run-20230120_202116-31aq5tse/logs/debug-internal.log
+2023-01-20 20:21:16,831 INFO    MainThread:107404 [wandb_init.py:init():516] calling init triggers
+2023-01-20 20:21:16,831 INFO    MainThread:107404 [wandb_init.py:init():519] wandb.init called with sweep_config: {}
+config: {}
+2023-01-20 20:21:16,831 INFO    MainThread:107404 [wandb_init.py:init():535] re-initializing run, found existing run on stack: 23fb609n
+2023-01-20 20:21:16,832 INFO    MainThread:107404 [wandb_run.py:_finish():1746] finishing run cares/autoencoder-experiments/23fb609n
+2023-01-20 20:21:16,832 INFO    MainThread:107404 [jupyter.py:save_history():448] not saving jupyter history
+2023-01-20 20:21:16,832 INFO    MainThread:107404 [jupyter.py:save_ipynb():378] not saving jupyter notebook
+2023-01-20 20:21:16,832 INFO    MainThread:107404 [wandb_init.py:_jupyter_teardown():408] cleaning up jupyter logic
+2023-01-20 20:21:16,832 INFO    MainThread:107404 [wandb_run.py:_atexit_cleanup():1949] got exitcode: 0
+2023-01-20 20:21:16,832 INFO    MainThread:107404 [wandb_run.py:_restore():1932] restore
+2023-01-20 20:21:16,832 INFO    MainThread:107404 [wandb_run.py:_restore():1938] restore done
+2023-01-20 20:21:22,204 INFO    MainThread:107404 [wandb_run.py:_footer_history_summary_info():3377] rendering history
+2023-01-20 20:21:22,218 INFO    MainThread:107404 [wandb_run.py:_footer_history_summary_info():3409] rendering summary
+2023-01-20 20:21:22,221 INFO    MainThread:107404 [wandb_run.py:_footer_sync_info():3333] logging synced files
