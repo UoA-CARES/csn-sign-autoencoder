@@ -3,7 +3,7 @@ model = dict(
     backbone=dict(
         type='ResNet3dCSN',
         pretrained2d=False,
-        pretrained='https://download.openmmlab.com/mmaction/recognition/csn/ircsn_from_scratch_r50_ig65m_20210617-ce545a37.pth',
+        pretrained=None,
         depth=50,
         with_pool2=False,
         bottleneck_mode='ir',
@@ -27,7 +27,7 @@ log_config = dict(interval=10,
                            init_kwargs={
                                'entity': "cares",
                                'project': "autoencoder-experiments",
-                               'group': "mmaction-csn",
+                               'group': "autsl-csn-mmaction",
                            },
                            log_artifact=True)
                   ])
@@ -39,11 +39,11 @@ workflow = [('train', 1)]
 opencv_num_threads = 0
 mp_start_method = 'fork'
 dataset_type = 'RawframeDataset'
-data_root = 'data/wlasl/rawframes'
-data_root_val = 'data/wlasl/rawframes'
-ann_file_train = 'data/wlasl/train_annotations.txt'
-ann_file_val = 'data/wlasl/test_annotations.txt'
-ann_file_test = 'data/wlasl/test_annotations.txt'
+data_root = 'data/autsl/rawframes'
+data_root_val = 'data/autsl/rawframes'
+ann_file_train = 'data/autsl/train_annotations.txt'
+ann_file_val = 'data/autsl/test_annotations.txt'
+ann_file_test = 'data/autsl/test_annotations.txt'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
 train_pipeline = [
@@ -102,14 +102,14 @@ test_pipeline = [
     dict(type='ToTensor', keys=['imgs'])
 ]
 data = dict(
-    videos_per_gpu=8,
-    workers_per_gpu=1,
+    videos_per_gpu=4,
+    workers_per_gpu=2,
     test_dataloader=dict(videos_per_gpu=1),
     val_dataloader=dict(videos_per_gpu=1),
     train=dict(
         type='RawframeDataset',
-        ann_file='data/wlasl/train_annotations.txt',
-        data_prefix='data/wlasl/rawframes',
+        ann_file='data/autsl/train_annotations.txt',
+        data_prefix='data/autsl/rawframes',
         pipeline=[
             dict(
                 type='SampleFrames',
@@ -132,8 +132,8 @@ data = dict(
         ]),
     val=dict(
         type='RawframeDataset',
-        ann_file='data/wlasl/test_annotations.txt',
-        data_prefix='data/wlasl/rawframes',
+        ann_file='data/autsl/test_annotations.txt',
+        data_prefix='data/autsl/rawframes',
         pipeline=[
             dict(
                 type='SampleFrames',
@@ -155,8 +155,8 @@ data = dict(
         ]),
     test=dict(
         type='RawframeDataset',
-        ann_file='data/wlasl/test_annotations.txt',
-        data_prefix='data/wlasl/rawframes',
+        ann_file='data/autsl/test_annotations.txt',
+        data_prefix='data/autsl/rawframes',
         pipeline=[
             dict(
                 type='SampleFrames',
@@ -178,18 +178,14 @@ data = dict(
         ]))
 evaluation = dict(
     interval=1, metrics=['top_k_accuracy', 'mean_class_accuracy'])
-optimizer = dict(type='SGD', lr=0.000125, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=0.0001)
 # optimizer_config = dict(grad_clip=dict(max_norm=40, norm_type=2))
 optimizer_config = None
 lr_config = dict(
     policy='step',
-    step=[60, 120],
-    warmup='linear',
-    warmup_ratio=0.1,
-    warmup_by_epoch=True,
-    warmup_iters=16)
-total_epochs = 150
-work_dir = './work_dirs/0/ircsn_ig65m_pretrained_bnfrozen_r50_32x2x1_58e_kinetics400_rgb'
+    step=[20, 40])
+total_epochs = 50
+work_dir = './work_dirs/0/ircsn_ig65m_pretrained_bnfrozen_r50_32x2x1_50e_autsl_rgb'
 find_unused_parameters = True
 omnisource = False
 module_hooks = []
