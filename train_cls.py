@@ -11,7 +11,7 @@ from cls_head import ClassifierHead
 from cls_autoencoder import EncoderDecoder
 
 wandb.init(entity="cares", project="autoencoder-experiments",
-           group="classification", name="wlasl-test")
+           group="classification", name="wlasl-train")
 
 # Set up device agnostic code
 try:
@@ -30,12 +30,23 @@ batch_size = 16
 os.makedirs(work_dir, exist_ok=True)
 
 
+data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes')
+ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt')
+ann_file_test = os.path.join(os.getcwd(), 'data/wlasl/test_annotations.txt')
+work_dir = 'work_dirs/wlasl/classifier/'
+batch_size = 16
+
+
+os.makedirs(work_dir, exist_ok=True)
+
+
 # Setting up data augments
 train_pipeline = transforms.Compose([
     ImglistToTensor(),  # list of PIL images to (FRAMES x CHANNELS x HEIGHT x WIDTH) tensor
-    transforms.Resize(256),  # image batch, resize smaller edge to 256
+    transforms.Resize((256, 256)),
     # image batch, center crop to square 224x224
-    transforms.RandomResizedCrop((224, 224)),
+    transforms.RandomResizedCrop((248, 248), scale=(0.5, 1.0)),
+    transforms.Resize((224, 224)),
     transforms.RandomHorizontalFlip(),
     transforms.Normalize(mean=[123.675, 116.28, 103.53], std=[
                          58.395, 57.12, 57.375]),
@@ -43,7 +54,7 @@ train_pipeline = transforms.Compose([
 
 test_pipeline = transforms.Compose([
     ImglistToTensor(),  # list of PIL images to (FRAMES x CHANNELS x HEIGHT x WIDTH) tensor
-    transforms.Resize(256),  # image batch, resize smaller edge to 256
+    transforms.Resize((256, 256)),
     # image batch, center crop to square 224x224
     transforms.CenterCrop((224, 224)),
     transforms.Normalize(mean=[123.675, 116.28, 103.53], std=[
@@ -250,7 +261,7 @@ for epoch in range(epochs):
     # Track best performance, and save the model's state
     if avg_vloss < best_vloss:
         best_vloss = avg_vloss
-        model_path = work_dir + f'epoch_{epoch+1}'
+        model_path = work_dir + f'epoch_{epoch+1}.pth'
         print(f'Saving checkpoint at {epoch+1} epochs...')
         torch.save(model.state_dict(), model_path)
 
