@@ -417,7 +417,7 @@ class ResNet3d(nn.Module):
                  in_channels=3,
                  num_stages=4,
                  base_channels=64,
-                 out_indices=(3, ),
+                 out_indices=(0, 1, 2, 3, ),
                  spatial_strides=(1, 2, 2, 2),
                  temporal_strides=(1, 1, 1, 1),
                  dilations=(1, 1, 1, 1),
@@ -858,10 +858,13 @@ class ResNet3d(nn.Module):
             torch.Tensor: The feature of the input
             samples extracted by the backbone.
         """
+        outs = []
         x = self.conv1(x)
+        outs.append(x)
+
         if self.with_pool1:
             x = self.maxpool(x)
-        outs = []
+
         for i, layer_name in enumerate(self.res_layers):
             res_layer = getattr(self, layer_name)
             x = res_layer(x)

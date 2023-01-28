@@ -19,11 +19,9 @@ cd ../..
 python tools/wlasl/split_videos.py $json data/wlasl/wlasl-complete
 
 # Extra raw frames
-python mmaction2/tools/data/build_rawframes.py data/wlasl/wlasl-complete/test data/wlasl/rawframes/test --ext mp4 --task rgb --level 1 --num-worker $n_workers --out-format jpg --use-opencv --new-width 256 --new-height 256
-python mmaction2/tools/data/build_rawframes.py data/wlasl/wlasl-complete/train data/wlasl/rawframes/train --ext mp4 --task rgb --level 1 --num-worker $n_workers --out-format jpg --use-opencv --new-width 256 --new-height 256
-python mmaction2/tools/data/build_rawframes.py data/wlasl/wlasl-complete/val data/wlasl/rawframes/val --ext mp4 --task rgb --level 1 --num-worker $n_workers --out-format jpg --use-opencv --new-width 256 --new-height 256
+python mmaction2/tools/data/build_rawframes.py data/wlasl/wlasl-complete/test data/wlasl/rawframes/test --ext mp4 --task rgb --level 1 --num-worker $n_workers --out-format jpg --use-opencv
+python mmaction2/tools/data/build_rawframes.py data/wlasl/wlasl-complete/train data/wlasl/rawframes/train --ext mp4 --task rgb --level 1 --num-worker $n_workers --out-format jpg --use-opencv
+python mmaction2/tools/data/build_rawframes.py data/wlasl/wlasl-complete/val data/wlasl/rawframes/val --ext mp4 --task rgb --level 1 --num-worker $n_workers --out-format jpg --use-opencv
 
 # Build the labels
 python tools/wlasl/build_labels.py "data/wlasl/wlasl-complete/${json}" data/wlasl
-
-
