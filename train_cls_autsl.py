@@ -11,7 +11,7 @@ from cls_head import ClassifierHead
 from cls_autoencoder import EncoderDecoder
 
 wandb.init(entity="cares", project="autoencoder-experiments",
-           group="classification", name="wlasl-cropfixed")
+           group="classification", name="autsl-cropfixed")
 
 # Set up device agnostic code
 try:
@@ -20,20 +20,20 @@ except:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Set up data
-data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes')
-ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt')
-ann_file_test = os.path.join(os.getcwd(), 'data/wlasl/test_annotations.txt')
-work_dir = 'work_dirs/wlasl/classifier/'
+data_root = os.path.join(os.getcwd(), 'data/autsl/rawframes')
+ann_file_train = os.path.join(os.getcwd(), 'data/autsl/train_annotations.txt')
+ann_file_test = os.path.join(os.getcwd(), 'data/autsl/test_annotations.txt')
+work_dir = 'work_dirs/autsl/classifier/'
 
 
 os.makedirs(work_dir, exist_ok=True)
 
 
-data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes')
-ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt')
-ann_file_test = os.path.join(os.getcwd(), 'data/wlasl/test_annotations.txt')
-work_dir = 'work_dirs/wlasl/classifier/'
-batch_size = 28
+data_root = os.path.join(os.getcwd(), 'data/autsl/rawframes')
+ann_file_train = os.path.join(os.getcwd(), 'data/autsl/train_annotations.txt')
+ann_file_test = os.path.join(os.getcwd(), 'data/autsl/test_annotations.txt')
+work_dir = 'work_dirs/autsl/classifier/'
+batch_size = 16
 
 
 os.makedirs(work_dir, exist_ok=True)
@@ -64,7 +64,7 @@ test_pipeline = transforms.Compose([
 train_dataset = VideoFrameDataset(
     root_path=data_root,
     annotationfile_path=ann_file_train,
-    num_segments=12,
+    num_segments=16,
     frames_per_segment=1,
     imagefile_template='img_{:05d}.jpg',
     transform=train_pipeline,
@@ -75,7 +75,7 @@ train_dataset = VideoFrameDataset(
 test_dataset = VideoFrameDataset(
     root_path=data_root,
     annotationfile_path=ann_file_test,
-    num_segments=12,
+    num_segments=16,
     frames_per_segment=1,
     imagefile_template='img_{:05d}.jpg',
     transform=test_pipeline,
@@ -108,16 +108,16 @@ encoder = ResNet3dCSN(
     zero_init_residual=False,
     bn_frozen=True
 )
-# encoder.init_weights()
+encoder.init_weights()
 
 decoder = ClassifierHead()
-# decoder.init_weights()
+decoder.init_weights()
 
 model = EncoderDecoder(encoder, decoder)
 
 # Load model checkpoint
-checkpoint = torch.load(work_dir+'latest.pth')
-model.load_state_dict(checkpoint)
+# checkpoint = torch.load(work_dir+'latest.pth')
+# model.load_state_dict(checkpoint)
 
 
 # Specify loss function
