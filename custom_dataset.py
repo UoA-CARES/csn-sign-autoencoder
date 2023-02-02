@@ -139,7 +139,7 @@ class VideoFrameDataset(torch.utils.data.Dataset):
 
     def _sanity_check_samples(self):
         for record in self.video_list:
-            if record.num_frames <= 0 or record.start_frame == record.end_frame:
+            if record.num_frames <= 0:
                 print(
                     f"\nDataset Warning: video {record.path} seems to have zero RGB frames on disk!\n")
 

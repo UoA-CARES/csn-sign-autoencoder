@@ -12,7 +12,7 @@ from cls_autoencoder import EncoderDecoder
 from warmup_scheduler_pytorch import WarmUpScheduler
 
 wandb.init(entity="cares", project="autoencoder-experiments",
-           group="mnist", name="test")
+           group="wlasl100-fromscratch", name="test")
 
 # Set up device agnostic code
 try:
@@ -21,10 +21,10 @@ except:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Configs
-data_root = os.path.join(os.getcwd(), 'data/signmnist') 
-ann_file_train = os.path.join(os.getcwd(), 'data/signmnist/annotation_train.txt') 
-ann_file_test = os.path.join(os.getcwd(), 'data/signmnist/annotation_test.txt')
-work_dir = 'work_dirs/signmnist/sampleframes/'
+data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes') 
+ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt') 
+ann_file_test = os.path.join(os.getcwd(), 'data/signmnist/test_annotations.txt')
+work_dir = 'work_dirs/wlasl-fromscratch/'
 batch_size = 8
 
 os.makedirs(work_dir, exist_ok=True)
@@ -88,7 +88,8 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 # Create a CSN model
 encoder = ResNet3dCSN(
     pretrained2d=False,
-    pretrained='https://download.openmmlab.com/mmaction/recognition/csn/ircsn_from_scratch_r50_ig65m_20210617-ce545a37.pth',
+    pretrained=None,
+    # pretrained='https://download.openmmlab.com/mmaction/recognition/csn/ircsn_from_scratch_r50_ig65m_20210617-ce545a37.pth',
     depth=50,
     with_pool2=False,
     bottleneck_mode='ir',
@@ -96,6 +97,7 @@ encoder = ResNet3dCSN(
     zero_init_residual=False,
     bn_frozen=True
 )
+
 encoder.init_weights()
 
 decoder = I3DHead(num_classes=400,
@@ -103,7 +105,8 @@ decoder = I3DHead(num_classes=400,
                  spatial_type='avg',
                  dropout_ratio=0.5,
                  init_std=0.01)
-# decoder.init_weights()
+
+decoder.init_weights()
 
 model = EncoderDecoder(encoder, decoder)
 
