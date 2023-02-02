@@ -12,7 +12,7 @@ from cls_autoencoder import EncoderDecoder
 from warmup_scheduler_pytorch import WarmUpScheduler
 
 wandb.init(entity="cares", project="autoencoder-experiments",
-           group="wlasl100-frompretrained", name="test")
+           group="wlasl100-frompretrained", name="rtx4090")
 
 # Set up device agnostic code
 try:
@@ -23,9 +23,9 @@ except:
 # Configs
 data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes') 
 ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt') 
-ann_file_test = os.path.join(os.getcwd(), 'data/signmnist/test_annotations.txt')
-work_dir = 'work_dirs/wlasl-pretrained/'
-batch_size = 8
+ann_file_test = os.path.join(os.getcwd(), 'data/wlasl/test_annotations.txt')
+work_dir = 'work_dirs/wlasl-150e/'
+batch_size = 4
 
 os.makedirs(work_dir, exist_ok=True)
 
@@ -119,6 +119,9 @@ model = EncoderDecoder(encoder, decoder)
 optimizer = torch.optim.SGD(
     model.parameters(), lr=0.0000125, momentum=0.9, weight_decay=0.00001)
 
+# Specify Loss
+loss_fn = nn.CrossEntropyLoss()
+
 # Specify learning rate scheduler
 lr_scheduler = torch.optim.lr_scheduler.StepLR(
     optimizer, step_size=5696, gamma=0.1)
@@ -132,6 +135,25 @@ scheduler = WarmUpScheduler(optimizer, lr_scheduler,
 # Setup wandb
 wandb.watch(model, log_freq=10)
 
+def top_k_accuracy(scores, labels, topk=(1, )):
+    """Calculate top k accuracy score.
+    Args:
+        scores (list[np.ndarray]): Prediction scores for each class.
+        labels (list[int]): Ground truth labels.
+        topk (tuple[int]): K value for top_k_accuracy. Default: (1, ).
+    Returns:
+        list[float]: Top k accuracy score for each k.
+    """
+    res = np.zeros(len(topk))
+    labels = np.array(labels)[:, np.newaxis]
+    for i, k in enumerate(topk):
+        max_k_preds = np.argsort(scores, axis=1)[:, -k:][:, ::-1]
+        match_array = np.logical_or.reduce(max_k_preds == labels, axis=1)
+        topk_acc_score = match_array.sum() / match_array.shape[0]
+        res[i] = topk_acc_score
+
+    return res
+
 
 def train_one_epoch(epoch_index, interval=5):
     """Run one epoch for training.
@@ -140,7 +162,6 @@ def train_one_epoch(epoch_index, interval=5):
         interval (int): Frequency at which to print logs.
     Returns:
         last_loss (float): Loss value for the last batch.
-        learning_rate (float): Learning rate for the last batch.
     """
     running_loss = 0.
     last_loss = 0.
@@ -159,30 +180,27 @@ def train_one_epoch(epoch_index, interval=5):
         # Make predictions for this batch
         outputs = model(images)
 
-        # Get losses
-        loss_results = decoder.loss(outputs, targets)
         # Compute the loss and its gradients
-        loss = loss_results['loss_cls']
+        loss = loss_fn(outputs, targets)
         loss.backward()
 
         # Gradient Clipping
         torch.nn.utils.clip_grad_norm_(
-            model.parameters(), max_norm=40, norm_type=2)
+            model.parameters(), max_norm=40, norm_type=2.0)
 
         # Adjust learning weights
         optimizer.step()
+        scheduler.step()
 
         # Gather data and report
         running_loss += loss.item()
         if i % interval == interval-1:
             last_loss = running_loss / interval  # loss per batch
-            top1_acc = loss_results['top1_acc']
-            top5_acc = loss_results['top5_acc']
             print(
-                f'Epoch [{epoch_index}][{i+1}/{len(train_loader)}], lr: {scheduler.get_last_lr()[0]:.5e}, loss: {last_loss:.5}, top1_acc: {top1_acc}, top5_acc: {top5_acc}')
+                f'Epoch [{epoch_index}][{i+1}/{len(train_loader)}], lr: {scheduler.get_last_lr()[0]:.5e}, loss: {last_loss:.5}')
             running_loss = 0.
 
-    return last_loss, scheduler.get_last_lr()[0]
+    return last_loss, scheduler.get_last_lr
 
 
 def validate():
@@ -192,7 +210,9 @@ def validate():
         top1_acc (float): Top-1 accuracy in decimal.
         top5_acc (float): Top-5 accuracy in decimal.
     """
-    running_vloss = 0.
+    running_vloss = 0.0
+    running_vacc = np.zeros(2)
+
     print('Evaluating top_k_accuracy...')
 
     with torch.inference_mode():
@@ -201,29 +221,29 @@ def validate():
 
             voutputs = model(vimages.permute(0, 2, 1, 3, 4))
 
-            loss_results = decoder.loss(voutputs, vtargets)
-            vloss = loss_results['loss_cls']
+            vloss = loss_fn(voutputs, vtargets)
             running_vloss += vloss
 
+            running_vacc += top_k_accuracy(voutputs.detach().cpu().numpy(),
+                                           vtargets.detach().cpu().numpy(), topk=(1, 5))
 
     avg_vloss = running_vloss / (i + 1)
-    top1_acc = loss_results['top1_acc']
-    top5_acc = loss_results['top5_acc']
+
+    acc = running_vacc/len(test_loader)
+    top1_acc = acc[0].item()
+    top5_acc = acc[1].item()
 
     return (avg_vloss, top1_acc, top5_acc)
 
 
 # Train Loop
-epochs = 58
+epochs = 150
 best_vloss = 1_000_000.
 
 # Transfer model to device
 model.to(device)
 
 for epoch in range(epochs):
-    # Adjust learning rate
-    scheduler.step()
-
     # Turn on gradient tracking and do a forward pass
     model.train(True)
     avg_loss, learning_rate = train_one_epoch(epoch+1)
@@ -242,6 +262,9 @@ for epoch in range(epochs):
         model_path = work_dir + f'epoch_{epoch+1}.pth'
         print(f'Saving checkpoint at {epoch+1} epochs...')
         torch.save(model.state_dict(), model_path)
+
+     # Adjust learning rate
+    scheduler.step()
 
     # Track wandb
     wandb.log({'train/loss': avg_loss,
