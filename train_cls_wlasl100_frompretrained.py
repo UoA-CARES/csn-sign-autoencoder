@@ -11,8 +11,8 @@ from i3d_head import I3DHead
 from cls_autoencoder import EncoderDecoder
 from warmup_scheduler_pytorch import WarmUpScheduler
 
-wandb.init(entity="cares", project="autoencoder-experiments",
-           group="wlasl100-frompretrained", name="rtx4090")
+wandb.init(entity="cares", project="autoencoder",
+           group="cls-only")
 
 # Set up device agnostic code
 try:
@@ -24,7 +24,7 @@ except:
 data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes') 
 ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt') 
 ann_file_test = os.path.join(os.getcwd(), 'data/wlasl/test_annotations.txt')
-work_dir = 'work_dirs/wlasl-150e/'
+work_dir = 'work_dirs/wlasl-500e/'
 batch_size = 4
 
 os.makedirs(work_dir, exist_ok=True)
@@ -123,8 +123,8 @@ optimizer = torch.optim.SGD(
 loss_fn = nn.CrossEntropyLoss()
 
 # Specify learning rate scheduler
-lr_scheduler = torch.optim.lr_scheduler.StepLR(
-    optimizer, step_size=5696, gamma=0.1)
+lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+    optimizer, milestones=[100,400], gamma=0.1)
 
 scheduler = WarmUpScheduler(optimizer, lr_scheduler,
                             len_loader=len(train_loader),
@@ -200,7 +200,7 @@ def train_one_epoch(epoch_index, interval=5):
                 f'Epoch [{epoch_index}][{i+1}/{len(train_loader)}], lr: {scheduler.get_last_lr()[0]:.5e}, loss: {last_loss:.5}')
             running_loss = 0.
 
-    return last_loss, scheduler.get_last_lr
+    return last_loss, scheduler.get_last_lr()[0]
 
 
 def validate():
@@ -237,7 +237,7 @@ def validate():
 
 
 # Train Loop
-epochs = 150
+epochs = 500
 best_vloss = 1_000_000.
 
 # Transfer model to device
