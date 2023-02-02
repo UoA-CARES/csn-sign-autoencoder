@@ -190,7 +190,7 @@ def train_one_epoch(epoch_index, interval=5):
 
         # Adjust learning weights
         optimizer.step()
-        scheduler.step()
+        
 
         # Gather data and report
         running_loss += loss.item()
