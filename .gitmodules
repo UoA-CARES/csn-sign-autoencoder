@@ -1,12 +1,3 @@
-[submodule "CSN-PyTorch"]
-	path = CSN-PyTorch
-	url = https://github.com/mnmjh1215/CSN-PyTorch.git
-
-# Dataset
-data
 [submodule "mmaction2"]
 	path = mmaction2
 	url = https://github.com/open-mmlab/mmaction2.git
-[submodule "Video-Dataset-Loading-Pytorch"]
-	path = Video-Dataset-Loading-Pytorch
-	url = https://github.com/RaivoKoot/Video-Dataset-Loading-Pytorch.git
