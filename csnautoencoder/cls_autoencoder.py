@@ -8,5 +8,5 @@ class EncoderDecoder(nn.Module):
         self.decoder = decoder
 
     def forward(self, x):
-        code = self.encoder(x)
+        code = self.encoder(x)[4]
         return self.decoder(code)

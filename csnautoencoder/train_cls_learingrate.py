@@ -6,13 +6,13 @@ import numpy as np
 
 from torchvision import transforms
 from custom_dataset import VideoFrameDataset, ImglistToTensor
-from csn import csn50
+from mmcv_csn import ResNet3dCSN
 from i3d_head import I3DHead
 from cls_autoencoder import EncoderDecoder
 from scheduler import GradualWarmupScheduler
 
 wandb.init(entity="cares", project="autoencoder",
-           group="wlasl-10", name="pytorch")
+           group="wlasl-10", name="mmcv-scheduler-adjusted")
 
 # Set up device agnostic code
 try:
@@ -24,7 +24,7 @@ except:
 data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes') 
 ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt') 
 ann_file_test = os.path.join(os.getcwd(), 'data/wlasl/test_annotations.txt')
-work_dir = 'work_dirs/wlasl-csn/'
+work_dir = 'work_dirs/wlasl-500e/'
 batch_size = 8
 
 os.makedirs(work_dir, exist_ok=True)
@@ -86,9 +86,19 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 # set up model, loss, optimizer and scheduler
 # Create a CSN model
-encoder = csn50(num_classes=400, mode='ir')
+encoder = ResNet3dCSN(
+    pretrained2d=False,
+    # pretrained=None,
+    pretrained='https://download.openmmlab.com/mmaction/recognition/csn/ircsn_from_scratch_r50_ig65m_20210617-ce545a37.pth',
+    depth=50,
+    with_pool2=False,
+    bottleneck_mode='ir',
+    norm_eval=True,
+    zero_init_residual=False,
+    bn_frozen=True
+)
 
-# encoder.init_weights()
+encoder.init_weights()
 
 decoder = I3DHead(num_classes=400,
                  in_channels=2048,
@@ -107,7 +117,7 @@ model = EncoderDecoder(encoder, decoder)
 
 # Specify optimizer
 optimizer = torch.optim.SGD(
-    model.parameters(), lr=0.0000125, momentum=0.9, weight_decay=0.00001)
+    model.parameters(), lr=0.000125, momentum=0.9, weight_decay=0.0001)
 
 # Specify Loss
 loss_fn = nn.CrossEntropyLoss()
@@ -119,8 +129,8 @@ epochs = 150
 lr_scheduler = torch.optim.lr_scheduler.StepLR(
     optimizer, step_size=120, gamma=0.1)
 
-scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20], gamma=0.1)
-scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=100, after_scheduler=scheduler_steplr)
+scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[44, 104], gamma=0.1)
+scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=16, after_scheduler=scheduler_steplr)
 
 # Setup wandb
 wandb.watch(model, log_freq=10)

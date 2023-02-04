@@ -6,13 +6,13 @@ import numpy as np
 
 from torchvision import transforms
 from custom_dataset import VideoFrameDataset, ImglistToTensor
-from csn import csn50
+from mmcv_csn import ResNet3dCSN
 from i3d_head import I3DHead
 from cls_autoencoder import EncoderDecoder
 from scheduler import GradualWarmupScheduler
 
 wandb.init(entity="cares", project="autoencoder",
-           group="wlasl-10", name="pytorch")
+           group="wlasl-10", name="mmcv")
 
 # Set up device agnostic code
 try:
@@ -24,7 +24,7 @@ except:
 data_root = os.path.join(os.getcwd(), 'data/wlasl/rawframes') 
 ann_file_train = os.path.join(os.getcwd(), 'data/wlasl/train_annotations.txt') 
 ann_file_test = os.path.join(os.getcwd(), 'data/wlasl/test_annotations.txt')
-work_dir = 'work_dirs/wlasl-csn/'
+work_dir = 'work_dirs/wlasl-500e/'
 batch_size = 8
 
 os.makedirs(work_dir, exist_ok=True)
@@ -86,9 +86,19 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 # set up model, loss, optimizer and scheduler
 # Create a CSN model
-encoder = csn50(num_classes=400, mode='ir')
+encoder = ResNet3dCSN(
+    pretrained2d=False,
+    # pretrained=None,
+    pretrained='https://download.openmmlab.com/mmaction/recognition/csn/ircsn_from_scratch_r50_ig65m_20210617-ce545a37.pth',
+    depth=50,
+    with_pool2=False,
+    bottleneck_mode='ir',
+    norm_eval=True,
+    zero_init_residual=False,
+    bn_frozen=True
+)
 
-# encoder.init_weights()
+encoder.init_weights()
 
 decoder = I3DHead(num_classes=400,
                  in_channels=2048,
