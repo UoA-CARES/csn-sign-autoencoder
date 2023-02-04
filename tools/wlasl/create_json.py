@@ -26,17 +26,17 @@ def fix_missing():
     Returns:
        dict: The cleaned annotations for the videos. 
     '''
-    with open('missing.txt') as fin:
-        missing = fin.readlines()
+    # with open('missing.txt') as fin:
+    #     missing = fin.readlines()
 
     with open('nslt_2000.json') as fin:
         videos = json.load(fin)
 
-    for value in missing:
-        try:
-            videos.pop(value.strip('\n'))
-        except KeyError:
-            pass
+    # for value in missing:
+    #     try:
+    #         videos.pop(value.strip('\n'))
+    #     except KeyError:
+    #         pass
 
     return videos
 

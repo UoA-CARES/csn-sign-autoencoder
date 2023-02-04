@@ -38,7 +38,7 @@ def write_annotations(videos):
         frames = len([frame for frame in os.listdir(directory)
                      if os.path.isfile(os.path.join(directory, frame))])
         with open(f'{subset}_annotations.txt', 'a') as fout:
-            fout.write(f'{subset}/{video_id} 1 {frames} {class_id}\n')
+            fout.write(f'{subset}/{video_id} {frames} {class_id}\n')
 
 
 if __name__ == '__main__':
