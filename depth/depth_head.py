@@ -72,13 +72,13 @@ class Bottleneck(nn.Module):
 
         return out
 
-class RecontructionHead(nn.Module):
+class DepthHead(nn.Module):
     """A U-net based implementation for the depth decoder that uses MMAction2's
     Resnet3D CSN implementation as its encoder.
     """
 
     def __init__(self):
-        super(RecontructionHead, self,).__init__()
+        super(DepthHead, self,).__init__()
 
         self.decoder1 = nn.Sequential(
                         Bottleneck(2048,2048,1),
