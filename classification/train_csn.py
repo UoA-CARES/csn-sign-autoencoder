@@ -4,9 +4,8 @@ import torch.nn as nn
 import wandb
 import numpy as np
 
-from torchvision import transforms
-from custom_dataset import VideoFrameDataset, ImglistToTensor
-from csn import csn50
+from mmaction.datasets import build_dataset
+from mmcv_csn import ResNet3dCSN
 from i3d_head import I3DHead
 from cls_autoencoder import EncoderDecoder
 from scheduler import GradualWarmupScheduler
@@ -14,7 +13,7 @@ from scheduler import GradualWarmupScheduler
 os.chdir('../')
 
 wandb.init(entity="cares", project="autoencoder",
-           group="wlasl-10", name="pytorch")
+           group="wlasl-100", name="crop-fix")
 
 # Set up device agnostic code
 try:
@@ -31,46 +30,60 @@ batch_size = 8
 
 os.makedirs(work_dir, exist_ok=True)
 
-
-# Setting up data augments
-train_pipeline = transforms.Compose([
-        ImglistToTensor(),
-        transforms.Resize((256, 256)),
-        transforms.RandomResizedCrop((256, 256), scale=(0.6, 1.0)),
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(),
-        transforms.Normalize(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375]),
+# Set up dataset
+train_cfg=dict(
+    type='RawframeDataset',
+    ann_file='data/wlasl/train_annotations.txt',
+    data_prefix='data/wlasl/rawframes',
+    pipeline=[
+        dict(
+            type='SampleFrames',
+            clip_len=32,
+            frame_interval=2,
+            num_clips=1),
+        dict(type='RawFrameDecode'),
+        dict(type='Resize', scale=(-1, 256)),
+        dict(type='RandomResizedCrop', area_range=(0.4,1.0)),
+        dict(type='Resize', scale=(224, 224), keep_ratio=False),
+        dict(type='Flip', flip_ratio=0.5),
+        dict(
+            type='Normalize',
+            mean=[123.675, 116.28, 103.53],
+            std=[58.395, 57.12, 57.375],
+            to_bgr=False),
+        dict(type='FormatShape', input_format='NCTHW'),
+        dict(type='Collect', keys=['imgs', 'label'], meta_keys=[]),
+        dict(type='ToTensor', keys=['imgs', 'label'])
     ])
 
-test_pipeline = transforms.Compose([
-        ImglistToTensor(), # list of PIL images to (FRAMES x CHANNELS x HEIGHT x WIDTH) tensor
-        transforms.Resize((256, 256)),  # image batch, resize smaller edge to 256
-        transforms.CenterCrop((224, 224)),  # image batch, center crop to square 224x224
-        transforms.Normalize(mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375]),
+
+test_cfg=dict(
+        type='RawframeDataset',
+        ann_file='data/wlasl/test_annotations.txt',
+        data_prefix='data/wlasl/rawframes',
+        pipeline=[
+            dict(
+                type='SampleFrames',
+                clip_len=32,
+                frame_interval=2,
+                num_clips=1,
+                test_mode=True),
+            dict(type='RawFrameDecode'),
+            dict(type='Resize', scale=(-1, 256)),
+            dict(type='CenterCrop', crop_size=224),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_bgr=False),
+            dict(type='FormatShape', input_format='NCTHW'),
+            dict(type='Collect', keys=['imgs', 'label'], meta_keys=[]),
+            dict(type='ToTensor', keys=['imgs'])
     ])
 
-# Setting up datasets
-train_dataset = VideoFrameDataset(
-    root_path=data_root,
-    annotationfile_path=ann_file_train,
-    clip_len=32,
-    frame_interval=2,
-    num_clips=1,
-    imagefile_template='img_{:05d}.jpg',
-    transform=train_pipeline,
-    test_mode=False
-)
-
-test_dataset = VideoFrameDataset(
-    root_path=data_root,
-    annotationfile_path=ann_file_test,
-    clip_len=32,
-    frame_interval=2,
-    num_clips=1,
-    imagefile_template='img_{:05d}.jpg',
-    transform=test_pipeline,
-    test_mode=True
-)
+# Building the datasets
+train_dataset = build_dataset(train_cfg)
+test_dataset = build_dataset(test_cfg)
 
 # Setting up dataloaders
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
@@ -88,9 +101,19 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 
 # set up model, loss, optimizer and scheduler
 # Create a CSN model
-encoder = csn50(num_classes=400, mode='ir')
+encoder = ResNet3dCSN(
+    pretrained2d=False,
+    # pretrained=None,
+    pretrained='https://download.openmmlab.com/mmaction/recognition/csn/ircsn_from_scratch_r50_ig65m_20210617-ce545a37.pth',
+    depth=50,
+    with_pool2=False,
+    bottleneck_mode='ir',
+    norm_eval=True,
+    zero_init_residual=False,
+    bn_frozen=True
+)
 
-# encoder.init_weights()
+encoder.init_weights()
 
 decoder = I3DHead(num_classes=400,
                  in_channels=2048,
@@ -109,20 +132,25 @@ model = EncoderDecoder(encoder, decoder)
 
 # Specify optimizer
 optimizer = torch.optim.SGD(
-    model.parameters(), lr=0.0000125, momentum=0.9, weight_decay=0.00001)
+    model.parameters(), lr=0.000125, momentum=0.9, weight_decay=0.00001)
 
 # Specify Loss
-loss_fn = nn.CrossEntropyLoss()
+loss_cls = nn.CrossEntropyLoss()
 
 # Specify total epochs
-epochs = 150
+epochs = 100
 
 # Specify learning rate scheduler
 lr_scheduler = torch.optim.lr_scheduler.StepLR(
     optimizer, step_size=120, gamma=0.1)
 
-scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20], gamma=0.1)
-scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=100, after_scheduler=scheduler_steplr)
+scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[34, 84], gamma=0.1)
+scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=16, after_scheduler=scheduler_steplr)
+
+# Specify Loss
+loss_fn = nn.CrossEntropyLoss()
+
+
 
 # Setup wandb
 wandb.watch(model, log_freq=10)
@@ -161,10 +189,10 @@ def train_one_epoch(epoch_index, interval=5):
     # Here, we use enumerate(training_loader) instead of
     # iter(training_loader) so that we can track the batch
     # index and do some intra-epoch reporting
-    for i, (images, targets) in enumerate(train_loader):
-        # Every data instance is an input + label pair
-        images, targets = images.to(device).permute(
-            0, 2, 1, 3, 4), targets.to(device)
+    for i, x in enumerate(train_loader):
+        images, targets = x['imgs'].to(device), x['label'].to(device)
+        images = images.reshape((-1, ) + images.shape[2:])
+        targets = targets.reshape(-1, )
 
         # Zero your gradients for every batch!
         optimizer.zero_grad()
@@ -208,10 +236,12 @@ def validate():
     print('Evaluating top_k_accuracy...')
 
     with torch.inference_mode():
-        for i, (vimages, vtargets) in enumerate(test_loader):
-            vimages, vtargets = vimages.to(device), vtargets.to(device)
+        for i, x in enumerate(test_loader):
+            vimages, vtargets = x['imgs'].to(device), x['label'].to(device)
+            vimages = vimages.reshape((-1, ) + vimages.shape[2:])
+            vtargets = vtargets.reshape(-1, )
 
-            voutputs = model(vimages.permute(0, 2, 1, 3, 4))
+            voutputs = model(vimages)
 
             vloss = loss_fn(voutputs, vtargets)
             running_vloss += vloss
