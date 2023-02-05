@@ -73,7 +73,7 @@ class Bottleneck(nn.Module):
         return out
 
 class RecontructionHead(nn.Module):
-    """A U-net based implementation for the reconstruction decoder that uses MMAction2's
+    """A U-net based implementation for the depth decoder that uses MMAction2's
     Resnet3D CSN implementation as its encoder.
     """
 
@@ -107,7 +107,7 @@ class RecontructionHead(nn.Module):
                         nn.ConvTranspose3d(256,64,(3,2,2),(1,2,2), padding=(1,0,0))             
                         )     
 
-        self.outc =  nn.ConvTranspose3d(64+64,3,(3,2,2),(1,2,2),(1,0,0))
+        self.outc =  nn.ConvTranspose3d(64+64,1,(3,2,2),(1,2,2),(1,0,0))
 
 
     def forward(self,  x):
