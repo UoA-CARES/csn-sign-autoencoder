@@ -3,20 +3,20 @@ import torch
 import torch.nn as nn
 import wandb
 import numpy as np
+import torchvision.transforms
 
-from torchvision import transforms
 from mmcv_csn import ResNet3dCSN
 from csn import csn50
 from i3d_head import I3DHead
-from cls_autoencoder import EncoderDecoder
-from reconstruction_head import RecontructionHead
+from autoencoder import EncoderDecoder
+from depth_head import DepthHead
 from scheduler import GradualWarmupScheduler
 from mmaction.datasets import build_dataset
 
 os.chdir('../')
 
 wandb.init(entity="cares", project="autoencoder",
-           group="wlasl-100", name="reconstruction")
+           group="wlasl-100", name="depth-small-weigth")
 
 # Set up device agnostic code
 try:
@@ -24,8 +24,7 @@ try:
 except:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Set up dataset
-batch_size = 2
+
 train_cfg=dict(
     type='RawframeDataset',
     ann_file='data/wlasl/train_annotations.txt',
@@ -76,12 +75,14 @@ test_cfg=dict(
             dict(type='ToTensor', keys=['imgs'])
     ])
 
-work_dir = 'work_dirs/wlasl-dataset/'
-
+work_dir = 'work_dirs/wlasl100-depth/'
 
 os.makedirs(work_dir, exist_ok=True)
 
 # Building the datasets
+
+batch_size = 1
+
 train_dataset = build_dataset(train_cfg)
 test_dataset = build_dataset(test_cfg)
 
@@ -98,6 +99,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                     num_workers=4,
                                     pin_memory=True)
 
+
 # Create a CSN model
 encoder = ResNet3dCSN(
     pretrained2d=False,
@@ -113,7 +115,7 @@ encoder = ResNet3dCSN(
 
 encoder.init_weights()
 
-reconstruct_head = RecontructionHead()
+depth_head = DepthHead()
 
 decoder = I3DHead(num_classes=400,
                  in_channels=2048,
@@ -123,7 +125,31 @@ decoder = I3DHead(num_classes=400,
 
 decoder.init_weights()
 
-model = EncoderDecoder(encoder, decoder, reconstruct_head)
+model = EncoderDecoder(encoder, decoder, depth_head)
+
+# Set up MiDaS depth model
+# model_type = "DPT_Large"     # MiDaS v3 - Large     (highest accuracy, slowest inference speed)
+# model_type = "DPT_Hybrid"   # MiDaS v3 - Hybrid    (medium accuracy, medium inference speed)
+model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
+
+midas = torch.hub.load("intel-isl/MiDaS", model_type)
+midas.to(device)
+midas.eval()
+
+
+def estimate_depth(images):
+    with torch.no_grad():
+        depth = midas(images.permute(0,2,1,3,4).reshape(-1,3,224,224))
+
+        depth = torch.nn.functional.interpolate(
+            depth.unsqueeze(1),
+            size=(224,224),
+            mode="bicubic",
+            align_corners=False,
+        ).squeeze()
+        
+    return depth.reshape(-1, 1, 32, 224, 224)
+
 
 # Specify optimizer
 optimizer = torch.optim.SGD(
@@ -131,16 +157,16 @@ optimizer = torch.optim.SGD(
 
 # Specify Loss
 loss_cls = nn.CrossEntropyLoss()
-loss_reconstruct = nn.MSELoss()
+loss_depth = nn.MSELoss()
 
 # Specify total epochs
-epochs = 100
+epochs = 150
 
 # Specify learning rate scheduler
 lr_scheduler = torch.optim.lr_scheduler.StepLR(
     optimizer, step_size=120, gamma=0.1)
 
-scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[34, 84], gamma=0.1)
+scheduler_steplr = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[34, 124], gamma=0.1)
 scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=16, after_scheduler=scheduler_steplr)
 
 model.to(device)
@@ -192,12 +218,19 @@ def train_one_epoch(epoch_index, interval=5):
         optimizer.zero_grad()
 
         # Make predictions for this batch
-        cls_score, reconstructed = model(images)
-
+        cls_score, predicted_depth = model(images)
+        
+        # Estimate depth using MiDaS
+        depth = estimate_depth(images)
+        
         # Get losses
         loss_cls_score = loss_cls(cls_score, targets)
-        loss_reconstruct_score = loss_reconstruct(reconstructed, images)
-        loss = 0.8 * loss_cls_score + 0.2 * loss_reconstruct_score
+        loss_depth_score = loss_depth(predicted_depth, depth)
+            
+        if epoch_index<100:
+            loss = 0.5 * loss_cls_score + 0.5 * loss_depth_score
+        else:
+            loss = loss_cls_score
         
         # Compute the loss and its gradients
         loss.backward()
@@ -215,7 +248,7 @@ def train_one_epoch(epoch_index, interval=5):
         if i % interval == interval-1:
             last_loss = running_loss / interval  # loss per batch
             print(
-                f'Epoch [{epoch_index}][{i+1}/{len(train_loader)}], loss_cls: {loss_cls_score.item():.5}, reconstruct_loss: {loss_reconstruct_score.item():.5} lr: {scheduler.get_last_lr()[0]:.5e}, loss: {last_loss:.5}')
+                f'Epoch [{epoch_index}][{i+1}/{len(train_loader)}], loss_cls: {loss_cls_score.item():.5}, depth_loss: {loss_depth_score.item():.5} lr: {scheduler.get_last_lr()[0]:.5e}, loss: {last_loss:.5}')
             running_loss = 0.
 
     return last_loss, scheduler.get_last_lr()[0]
@@ -239,12 +272,16 @@ def validate():
             vimages = vimages.reshape((-1, ) + vimages.shape[2:])
             vtargets = vtargets.reshape(-1, )
             
-            cls_score, reconstructed = model(vimages)
+            # Make predictions for this batch
+            cls_score, predicted_depth = model(vimages)
+
+            # Estimate depth using MiDaS
+            depth = estimate_depth(vimages)
 
             # Get losses
             loss_cls_score = loss_cls(cls_score, vtargets)
-            loss_reconstruct_score = loss_reconstruct(reconstructed, vimages)
-            vloss = 0.8 * loss_cls_score + 0.2 * loss_reconstruct_score
+            
+            vloss = loss_cls_score
             
             running_vloss += vloss
 
