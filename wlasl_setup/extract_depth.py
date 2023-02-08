@@ -27,9 +27,9 @@ else:
 def get_depth(img):
     '''Returns the depth using the MiDaS model.
     Args:
-        img (torch.tensor): img in tensor format
+        img (torch.tensor): Input image in CHW format.
     Returns:
-        (torch.tensor) depth image.
+        prediction (torch.tensor) Depth image in 2HW format.
     '''
     with torch.no_grad():
         prediction = midas(img)
@@ -51,9 +51,10 @@ def write_depth(depth, frame_number, out_path):
 def process_video(video_dir):
     '''Processes all the frames in a video directory.
     Args:
-        video_dir (str): The directory for the video.
+        video_dir (str): The directory of the video.
     '''
-    for i, frame in enumerate(os.listdir(video_dir)):
+    frames = [img for img in os.listdir(video_dir) if img[:3]=='img']
+    for i, frame in enumerate(frames):
         img = cv2.imread(os.path.join(video_dir,frame))
         img = np.array(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         img_transform = transform(img).to(device)
@@ -62,9 +63,9 @@ def process_video(video_dir):
 
 
 def process_subset(subset_dir):
-    '''Process all the video directories under a directory.
+    '''Processes all the frames for video directories under a subset directory.
     Args:
-        subset_dir (str): The root directory for video folders.
+        subset_dir (str): The root directory for the video folders.
     '''
     for video in os.listdir(subset_dir):
         video_dir = os.path.join(subset_dir, video)
@@ -76,6 +77,7 @@ if __name__ == '__main__':
     # Extract depth for wlasl
     data = 'data/wlasl/rawframes/'
     subsets = ['train', 'test', 'val']
+
     for subset in subsets:
         subset_dir = os.path.join(data, subset)
         process_subset(subset_dir)
