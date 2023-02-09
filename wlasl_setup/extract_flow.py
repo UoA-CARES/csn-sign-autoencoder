@@ -70,28 +70,31 @@ def write_img(flow_img, frame_number, out_path):
     cv2.imwrite(os.path.join(out_path, f'flow_{frame_number:05d}.jpg'),
                 flow_img.squeeze().permute(1,2,0).cpu().numpy())
 
-def process_video(video_path, gap=4):
+def process_video(video_path, gap=2):
     '''Write flow images for a video.
     
     Args:
         video_path (str): The path to the folder containing all the frames for a video.
-        gap (int): The number of frames to skip for finding optical flow. Default: 4
+        gap (int): The number of frames to skip for finding optical flow. Default: 2
     '''
     start_frame = 1
-    end_frame = 4
     frame_number = 1
+    end_frame = gap
     n_frames = len([img for img in os.listdir(video_path) if img[:3]=='img'])
-    
+
     while end_frame <= n_frames:
         img1, img2 = load_images(video_path, start_frame, end_frame)
         img1, img2 = preprocess(img1, img2)
         flow = get_flow(img1, img2)
         flow_img = flow_to_image(flow)
         write_img(flow_img, frame_number, video_path)
-
+        
         frame_number += 1
         start_frame = end_frame
-        end_frame += gap
+        end_frame += gap-1
+
+    # Write last flow frame again to match the number of frames
+    write_img(flow_img, frame_number, video_path)
 
 def process_subset(subset_path):
     '''Write flow images for all the video directories under a root path.
@@ -108,7 +111,8 @@ def process_subset(subset_path):
 if __name__ == '__main__':
     # Extract flow for wlasl
     data = 'data/wlasl/rawframes/'
-    subsets = ['train', 'test', 'val']
+    # subsets = ['train', 'test', 'val']
+    subsets = ['test_flow']
     for subset in subsets:
         subset_dir = os.path.join(data, subset)
         process_subset(subset_dir)
